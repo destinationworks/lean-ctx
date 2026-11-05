@@ -7,10 +7,10 @@ name = "lean-ctx"
 version = "3.12.2"
 edition = "2024"
 autobins = false
-description = "LeanCTX | OSS: the open-source runtime for the Context Gateway for AI agents. CLI, MCP server, and supported proxy integrations."
+description = "LeanCTX | Air-gapped OSS CLI & hook binary (destinationworks fork): zero-network local context compression."
 license = "Apache-2.0"
-repository = "https://github.com/yvgude/lean-ctx"
-homepage = "https://leanctx.com"
+repository = "https://github.com/destinationworks/lean-ctx"
+homepage = "https://github.com/destinationworks/lean-ctx"
 readme = "../../README.md"
 keywords = ["context-gateway", "mcp", "llm", "ai-agents", "context"]
 categories = ["command-line-utilities", "development-tools"]
@@ -43,14 +43,6 @@ doc = false
 [features]
 default = [
   "tree-sitter",
-  "embeddings",
-  "http-server",
-  "shape-xlat",
-  "secure-update",
-  "jemalloc",
-  "qdrant",
-  "pgvector",
-  "wasm",
 ]
 enterprise = ["lean-ctx-engine/enterprise", "lean-ctx-proxy/enterprise"]
 # The binary exports jemalloc's options (`_rjem_malloc_conf`); its test reads

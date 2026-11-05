@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 //! OS-specific auto-update scheduler management.
 //! Supports macOS LaunchAgent, Linux systemd/cron, Windows Task Scheduler.
 
@@ -37,22 +38,8 @@ impl std::fmt::Display for ScheduleInfo {
 }
 
 pub fn install_schedule(interval_hours: u64) -> Result<ScheduleInfo, String> {
-    let binary = std::path::PathBuf::from(super::portable_binary::resolve_portable_binary());
-
-    #[cfg(target_os = "macos")]
-    return install_macos_launchagent(&binary, interval_hours * 3600, interval_hours);
-
-    #[cfg(target_os = "linux")]
-    return install_linux_scheduler(&binary, interval_hours);
-
-    #[cfg(target_os = "windows")]
-    return install_windows_task(&binary, interval_hours);
-
-    #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
-    {
-        let _ = binary;
-        Err("Auto-update scheduling not supported on this platform".to_string())
-    }
+    let _ = interval_hours;
+    Err("Auto-update scheduling is disabled in destinationworks air-gapped build".to_string())
 }
 
 pub fn remove_schedule() -> Result<(), String> {

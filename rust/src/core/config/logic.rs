@@ -345,9 +345,10 @@ impl Config {
         }
     }
 
-    /// Returns `true` if the daily update check is disabled via env var or config.
+    /// Always returns `true` in the destinationworks air-gapped build so no background update checks run.
     pub fn update_check_disabled_effective(&self) -> bool {
-        std::env::var("LEAN_CTX_NO_UPDATE_CHECK").is_ok() || self.update_check_disabled
+        let _ = self.update_check_disabled;
+        true
     }
 
     pub fn memory_policy_effective(&self) -> Result<MemoryPolicy, String> {

@@ -27,8 +27,12 @@ pub(crate) fn verify_integrity() -> bool {
     compute_seed_hash(INTEGRITY_SEED) == expected_hash()
 }
 
+pub const AIRGAPPED_BUILD: bool = true;
+pub const AIRGAPPED_ORIGIN_MARKER: &str = "destinationworks-airgapped";
+pub const AIRGAPPED_ORIGIN_REPO: &str = "https://github.com/destinationworks/lean-ctx";
+
 pub(crate) fn is_official_origin() -> bool {
-    ORIGIN_REPO.contains("yvgude/lean-ctx") && ORIGIN_NAME == "lean-ctx-engine"
+    ORIGIN_REPO == AIRGAPPED_ORIGIN_REPO && ORIGIN_NAME == "lean-ctx-engine"
 }
 
 pub struct IntegrityReport {
@@ -52,11 +56,14 @@ pub fn check() -> IntegrityReport {
 pub fn origin_line() -> String {
     let report = check();
     if report.seed_ok && report.origin_ok {
-        format!("lean-ctx {} (official, {})", report.version, report.repo)
+        format!(
+            "lean-ctx {} ({}, {})",
+            report.version, AIRGAPPED_ORIGIN_MARKER, report.repo
+        )
     } else {
         format!(
-            "WARNING: Modified redistribution detected. \
-             Official builds: https://github.com/yvgude/lean-ctx \
+            "WARNING: Unverified redistribution detected. \
+             Air-gapped builds: {AIRGAPPED_ORIGIN_REPO} \
              (pkg={}, repo={})",
             report.pkg_name, report.repo
         )
@@ -94,5 +101,7 @@ mod tests {
     fn origin_line_contains_version() {
         let line = origin_line();
         assert!(line.contains(env!("CARGO_PKG_VERSION")));
+        assert!(line.contains(AIRGAPPED_ORIGIN_MARKER));
+        assert!(line.contains(AIRGAPPED_ORIGIN_REPO));
     }
 }

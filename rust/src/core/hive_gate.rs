@@ -7,7 +7,7 @@
 /// Release switch: the connector shipped switched off in 3.12.0 and 3.12.1
 /// (`hive connect`/`hive link` refused, `hive` hidden from help, suggestions
 /// and completions). Owner 2026-11-04: LeanCTX | Hive opens with 3.12.2.
-pub const HIVE_AVAILABLE: bool = true;
+pub const HIVE_AVAILABLE: bool = false;
 /// Test switch: `LEAN_CTX_HIVE_PREVIEW=1` opens the connector before the
 /// release, for a loopback Hive only (the FakeHive of the test suite).
 pub const PREVIEW_ENV: &str = "LEAN_CTX_HIVE_PREVIEW";
@@ -24,7 +24,8 @@ pub const TOOL_NOT_AVAILABLE: &str =
 pub const HIVE_TOOLS: &[&str] = &["ctx_tasks"];
 
 fn preview() -> bool {
-    std::env::var(PREVIEW_ENV).as_deref() == Ok("1")
+    let _ = PREVIEW_ENV;
+    false
 }
 
 /// Whether `origin` names this machine (`127.0.0.1`, `localhost`, `::1`).

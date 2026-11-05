@@ -507,51 +507,9 @@ fn try_gh_cli(title: &str, body: &str) -> bool {
 }
 
 fn try_ureq_api(title: &str, body: &str) {
-    println!("\n{YELLOW}gh CLI not available. Using GitHub API directly.{RST}");
-    println!("Enter a GitHub Personal Access Token (needs 'repo' scope):");
-    println!("{DIM}Create one at: https://github.com/settings/tokens/new{RST}");
-
-    // Read without echo so the token never appears on screen or in a
-    // terminal recording; no TTY means no token (the report is saved).
-    let token = rpassword::prompt_password("Token (input hidden): ").unwrap_or_default();
-    let token = token.trim();
-
-    if token.is_empty() {
-        eprintln!("No token provided. Saving report locally.");
-        save_report_locally(body);
-        return;
-    }
-
-    let url = format!("https://api.github.com/repos/{REPO}/issues");
-    let payload = serde_json::json!({
-        "title": title,
-        "body": body,
-        "labels": ["bug", "auto-report"]
-    });
-
-    let payload_bytes = serde_json::to_vec(&payload).unwrap_or_default();
-    match ureq::post(&url)
-        .header("Authorization", &format!("Bearer {token}"))
-        .header("Accept", "application/vnd.github.v3+json")
-        .header("Content-Type", "application/json")
-        .header("User-Agent", &format!("lean-ctx/{VERSION}"))
-        .send(payload_bytes.as_slice())
-    {
-        Ok(resp) => {
-            let resp_body = resp.into_body().read_to_string().unwrap_or_default();
-            if let Ok(val) = serde_json::from_str::<serde_json::Value>(&resp_body)
-                && let Some(html_url) = val.get("html_url").and_then(|u| u.as_str())
-            {
-                println!("\n{GREEN}Issue created:{RST} {html_url}");
-                return;
-            }
-            println!("{GREEN}Issue created successfully.{RST}");
-        }
-        Err(e) => {
-            eprintln!("GitHub API error: {e}");
-            save_report_locally(body);
-        }
-    }
+    let _ = (title, REPO, VERSION);
+    eprintln!("Remote GitHub issue submission is disabled in destinationworks air-gapped build. Saving report locally.");
+    save_report_locally(body);
 }
 
 fn save_report_locally(body: &str) {

@@ -1,3 +1,11 @@
+> **DestinationWorks Air-Gapped Fork (`destinationworks/lean-ctx`)**
+>
+> Hardened, zero-network local context-compression build maintained for **Orust** and air-gapped Codex workflows:
+> - **Zero Telemetry & Cloud Sync**: Product telemetry (`api.leanctx.com`), feedback transport, config opt-out resets, and Hive cloud sync are permanently disabled at the Rust source level.
+> - **Zero Update Checks & Token Reads**: Background GitHub release checks, auto-update schedulers, and `GITHUB_TOKEN` / `GH_TOKEN` environment reads are removed.
+> - **Zero Model/Catalog Downloads**: Live pricing fetches (`openrouter.ai` / LiteLLM), HuggingFace ONNX auto-downloads, and outbound HTTP `fetch` are permanently disabled.
+> - **Slim Cross-Platform Build (`default = ["tree-sitter"]`)**: Builds cleanly offline across macOS, Linux, and Windows (`x64` & `ARM64`), emitting the verified build identity `lean-ctx <version> (destinationworks-airgapped, https://github.com/destinationworks/lean-ctx)` on `--version`.
+
 <div align="center">
 
 <pre>

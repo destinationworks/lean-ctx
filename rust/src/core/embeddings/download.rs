@@ -11,7 +11,6 @@
 
 use std::io::Read;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 
 use super::model_registry::{ModelConfig, VocabSource};
 
@@ -131,78 +130,8 @@ fn download_file(
     min_bytes: u64,
     model_dir: &Path,
 ) -> anyhow::Result<()> {
-    let local_path = model_dir.join(local_name);
-    let tmp_path = model_dir.join(format!("{local_name}.tmp"));
-
-    tracing::info!("Downloading {local_name} ...");
-
-    let agent: ureq::Agent = ureq::config::Config::builder()
-        .tls_config(crate::core::http_client::platform_tls_config())
-        .timeout_connect(Some(Duration::from_secs(30)))
-        .timeout_global(Some(Duration::from_mins(5)))
-        .build()
-        .into();
-    let response = agent
-        .get(url)
-        .header("User-Agent", USER_AGENT)
-        .call()
-        .map_err(|e| anyhow::anyhow!("Failed to download {url}: {e}"))?;
-
-    let status = response.status();
-    if status != 200 {
-        anyhow::bail!("Download of {local_name} returned HTTP {status}");
-    }
-
-    let content_length = response
-        .headers()
-        .get("content-length")
-        .and_then(|v| v.to_str().ok())
-        .and_then(|v| v.parse::<u64>().ok());
-
-    let mut body = response.into_body().into_reader();
-    let mut out = std::fs::File::create(&tmp_path)?;
-    let mut buf = vec![0u8; 65536];
-    let mut total: u64 = 0;
-    let mut last_report: u64 = 0;
-
-    loop {
-        let n = body.read(&mut buf)?;
-        if n == 0 {
-            break;
-        }
-        std::io::Write::write_all(&mut out, &buf[..n])?;
-        total += n as u64;
-
-        if total - last_report > 1_000_000 {
-            if let Some(cl) = content_length {
-                let pct = (total as f64 / cl as f64 * 100.0) as u32;
-                tracing::info!(
-                    "  {local_name} — {:.1}MB / {:.1}MB ({pct}%)",
-                    total as f64 / 1_048_576.0,
-                    cl as f64 / 1_048_576.0,
-                );
-            } else {
-                tracing::info!(
-                    "  {local_name} — {:.1}MB downloaded",
-                    total as f64 / 1_048_576.0
-                );
-            }
-            last_report = total;
-        }
-    }
-    drop(out);
-
-    if total < min_bytes {
-        let _ = std::fs::remove_file(&tmp_path);
-        anyhow::bail!(
-            "Downloaded {local_name} is too small ({total} bytes, expected >= {min_bytes})",
-        );
-    }
-
-    std::fs::rename(&tmp_path, &local_path)?;
-    tracing::info!("  {local_name} — {:.1}MB saved", total as f64 / 1_048_576.0);
-
-    Ok(())
+    let _ = (url, local_name, min_bytes, model_dir, USER_AGENT);
+    anyhow::bail!("Model network downloads are disabled in destinationworks air-gapped build")
 }
 
 fn verify_model_files(model_dir: &Path, config: &ModelConfig) -> anyhow::Result<()> {

@@ -12,16 +12,7 @@ use crate::core::embeddings::EmbeddingEngine;
 /// (semantic recall, EFF-7 redundancy filtering) without manual setup.
 #[cfg(feature = "embeddings")]
 pub fn embeddings_auto_download_allowed() -> bool {
-    if let Ok(v) = std::env::var("LEAN_CTX_EMBEDDINGS_AUTO_DOWNLOAD") {
-        return matches!(
-            v.trim().to_lowercase().as_str(),
-            "1" | "true" | "yes" | "on"
-        );
-    }
-    crate::core::config::Config::load()
-        .embedding
-        .auto_download
-        .unwrap_or(true)
+    false
 }
 
 #[cfg(feature = "embeddings")]

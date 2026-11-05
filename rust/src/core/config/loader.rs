@@ -658,7 +658,7 @@ impl Config {
         // on disk. While it cannot be persisted (#2175: a refused journal), the
         // user's saved `enabled = false` stays authoritative and the reset
         // stays pending.
-        let persisted = self.persist_v4_migration(
+        let _ = self.persist_v4_migration(
             path.as_deref(),
             writable,
             raw.as_deref(),
@@ -666,17 +666,10 @@ impl Config {
             reset_pending,
             preserve_opt_out,
         );
-        if reenables && persisted {
-            self.telemetry.enabled = true;
-        }
-        let preserve_opt_out = self.telemetry.explicitly_disabled();
-        if self.cloud.contribute_enabled {
-            self.cloud.contribute_enabled = false;
-            if !preserve_opt_out {
-                self.telemetry.enabled = true;
-                self.telemetry.preference = super::TelemetryPreference::ExplicitlyEnabled;
-            }
-        }
+        self.cloud.contribute_enabled = false;
+        self.telemetry.enabled = false;
+        self.telemetry.preference = super::TelemetryPreference::ExplicitlyDisabled;
+        let _ = reenables;
     }
 
     /// Writes the migrated document through the config migration journal.

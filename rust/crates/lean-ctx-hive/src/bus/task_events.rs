@@ -20,15 +20,21 @@
 //! announces a change twice or announces an older one after a newer.
 
 use std::collections::BTreeMap;
+#[allow(unused_imports)]
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+#[allow(unused_imports)]
 use super::address::Address;
+#[allow(unused_imports)]
 use crate::tasks::ListFilter;
+#[allow(unused_imports)]
 use crate::vault::VaultMap;
+#[allow(unused_imports)]
 use lean_ctx::core::a2a::message::{MessagePriority, PrivacyLevel};
+#[allow(unused_imports)]
 use lean_ctx::core::agents::AgentRegistry;
 use lean_ctx_protocol::hive::tasks::TaskState;
 
@@ -132,6 +138,7 @@ pub struct TaskSeen {
 pub type TasksSeen = BTreeMap<String, BTreeMap<u64, TaskSeen>>;
 
 /// Tasks remembered per vault (the oldest changes drop first).
+#[cfg(any(feature = "http-server", test))]
 const MAX_SEEN: usize = 1000;
 
 /// Where an event came from.
@@ -147,6 +154,7 @@ pub enum Origin {
 /// than the change already applied is dropped. A catch-up announces only a
 /// task whose state changed since; a frame repeats nothing a catch-up of
 /// the same change (same state, same second) already announced.
+#[cfg(any(feature = "http-server", test))]
 fn admit(seen: &mut TasksSeen, event: &TaskEvent, origin: Origin) -> bool {
     let tasks = seen.entry(event.vault.clone()).or_default();
     let notify = match tasks.get(&event.number) {
@@ -180,6 +188,7 @@ fn admit(seen: &mut TasksSeen, event: &TaskEvent, origin: Origin) -> bool {
 /// Apply one event: outdate the vault's task cache and post its notices
 /// into the project's local bus, unless `seen` already holds this change
 /// or a newer one. An unknown vault changes nothing.
+#[cfg(any(feature = "http-server", test))]
 pub(crate) fn apply(
     registry: &mut AgentRegistry,
     map: &VaultMap,
@@ -241,6 +250,7 @@ pub(crate) fn apply(
 /// The open and submitted tasks of the `subscribed` vaults as events, for
 /// `apply` with [`Origin::CatchUp`], and what could not be read. Blocking
 /// (HTTP); the relay runs it off its session loop after each hello.
+#[cfg(any(feature = "http-server", test))]
 pub(crate) fn catch_up(map: &VaultMap, subscribed: &[String]) -> (Vec<TaskEvent>, Vec<String>) {
     let (mut events, mut errors) = (Vec::new(), Vec::new());
     for record in map.vaults.values() {
@@ -292,6 +302,7 @@ pub(crate) fn catch_up(map: &VaultMap, subscribed: &[String]) -> (Vec<TaskEvent>
 }
 
 /// `YYYY-MM-DDTHH:MM:SSZ` as unix ms; 0 (older than any change) if invalid.
+#[cfg(any(feature = "http-server", test))]
 fn unix_ms(timestamp: &str) -> u64 {
     chrono::DateTime::parse_from_rfc3339(timestamp)
         .ok()

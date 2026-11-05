@@ -116,7 +116,8 @@ fn legacy_reset_path() -> Result<std::path::PathBuf, String> {
 /// Whether the one-time re-enable of pre-v2 `telemetry.enabled = false` has
 /// yet to run. After it ran, a hand-edited `enabled = false` is a v2 choice.
 pub(crate) fn legacy_opt_out_reset_pending() -> bool {
-    legacy_reset_path().is_ok_and(|path| !path.exists())
+    let _ = legacy_reset_path();
+    false
 }
 
 pub(crate) fn mark_legacy_opt_out_reset() {
@@ -181,25 +182,17 @@ fn notice_text() -> String {
 /// first interactive command. Never prints for MCP, hooks or piped use, never
 /// when telemetry is already off or blocked, and never touches stdout.
 pub fn maybe_show_notice() {
-    if !(std::io::stderr().is_terminal() && crate::core::host_env::stdin_is_terminal()) {
-        return;
-    }
-    if notice_seen() || !telemetry_would_send() {
-        return;
-    }
-    eprint!("{}", notice_text());
-    eprintln!();
-    mark_notice_seen();
+    let _ = (
+        std::io::stderr().is_terminal(),
+        notice_seen(),
+        telemetry_would_send(),
+        notice_text(),
+    );
 }
 
 pub fn telemetry_would_send() -> bool {
-    let Ok(config) = crate::core::config::Config::try_load_global() else {
-        return false;
-    };
-    config.telemetry.send_eligible(
-        crate::core::host_env::var("DO_NOT_TRACK").as_deref(),
-        crate::core::host_env::var("LEAN_CTX_TELEMETRY").as_deref(),
-    ) && !running_in_ci()
+    let _ = running_in_ci();
+    false
 }
 
 #[cfg(test)]

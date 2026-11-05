@@ -50,21 +50,16 @@ pub fn is_lean_ctx_hook_command(command: &str, operation: &str) -> bool {
 }
 
 pub fn resolve_portable_binary() -> String {
-    let current = std::env::current_exe()
-        .ok()
-        .map(|p| p.to_string_lossy().into_owned());
-
-    let which_cmd = if cfg!(windows) { "where" } else { "which" };
-    let which_raw = std::process::Command::new(which_cmd)
-        .arg("lean-ctx")
-        .stderr(std::process::Stdio::null())
-        .output()
-        .ok()
-        .filter(|o| o.status.success())
-        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
-        .filter(|s| !s.is_empty());
-
-    choose_binary_path(current.as_deref(), which_raw.as_deref())
+    if let Some(override_bin) = hook_binary_override() {
+        return override_bin;
+    }
+    if let Ok(current) = std::env::current_exe()
+        && current.is_absolute()
+    {
+        return sanitize_exe_path(&current.to_string_lossy());
+    }
+    let _ = choose_binary_path(None, None);
+    "lean-ctx".to_string()
 }
 
 /// File names a `lean-ctx` launcher can have inside a `PATH` directory.

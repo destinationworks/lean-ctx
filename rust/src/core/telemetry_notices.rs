@@ -20,10 +20,12 @@ const MAX_MESSAGE_CHARS: usize = 280;
 const MAX_LINK_CHARS: usize = 300;
 const LINK_PREFIXES: &[&str] = &["https://leanctx.com/", "https://github.com/yvgude/lean-ctx"];
 /// Pending notices kept until shown; the server sends at most three.
+#[allow(dead_code)]
 const MAX_PENDING: usize = 3;
 /// IDs of shown notices remembered so a resend is not shown again.
 const MAX_SHOWN: usize = 200;
 /// Received notices kept with their text for the cockpit Inbox, newest last.
+#[allow(dead_code)]
 const MAX_RECEIVED: usize = 20;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -78,6 +80,7 @@ pub fn parse(value: &serde_json::Value) -> Option<Notice> {
 }
 
 /// The valid notices of an ingest response (`{"notices": [...]}`).
+#[allow(dead_code)]
 pub(crate) fn from_response(response: &serde_json::Value) -> Vec<Notice> {
     response
         .get("notices")
@@ -110,12 +113,14 @@ fn save(store: &NoticeStore) {
 
 /// Notices waiting to be shown.
 #[cfg(test)]
+#[allow(dead_code)]
 pub(crate) fn pending() -> Vec<Notice> {
     load().pending
 }
 
 /// Keeps notices that were neither shown nor already pending, and records each
 /// notice once, with its arrival time, for the cockpit.
+#[allow(dead_code)]
 pub(crate) fn remember(notices: Vec<Notice>) {
     if notices.is_empty() {
         return;

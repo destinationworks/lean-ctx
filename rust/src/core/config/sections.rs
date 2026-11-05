@@ -730,23 +730,17 @@ impl AutonomyConfig {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "snake_case")]
 pub enum TelemetryPreference {
-    #[default]
     DefaultOn,
     ExplicitlyEnabled,
+    #[default]
     ExplicitlyDisabled,
 }
 
-/// Privacy-safe product telemetry settings.
-///
-/// When enabled, lean-ctx sends cumulative daily aggregates to `api.leanctx.com`
-/// several times per day: a random installation ID (UUID v4), version, OS,
-/// setup profile and counters. No code, filenames, prompts, or personal data.
-/// Enabled by default (accepted at install); `lean-ctx telemetry off`,
-/// `DO_NOT_TRACK=1` and `LEAN_CTX_TELEMETRY=off` opt out.
+/// Privacy-safe product telemetry settings (permanently disabled in destinationworks air-gapped build).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(default)]
 pub struct TelemetryConfig {
-    /// Master switch for privacy-safe product telemetry.
+    /// Master switch for product telemetry (always false by default in air-gapped build).
     pub enabled: bool,
     /// Whether the state came from the v4 default or an explicit user choice.
     pub preference: TelemetryPreference,
@@ -757,8 +751,8 @@ pub struct TelemetryConfig {
 impl Default for TelemetryConfig {
     fn default() -> Self {
         Self {
-            enabled: true,
-            preference: TelemetryPreference::DefaultOn,
+            enabled: false,
+            preference: TelemetryPreference::ExplicitlyDisabled,
             last_heartbeat: None,
         }
     }
@@ -783,9 +777,8 @@ impl TelemetryConfig {
 
     #[must_use]
     pub fn send_eligible(&self, do_not_track: Option<&str>, env_override: Option<&str>) -> bool {
-        self.enabled
-            && self.preference != TelemetryPreference::ExplicitlyDisabled
-            && !Self::environment_disables(do_not_track, env_override)
+        let _ = (do_not_track, env_override);
+        false
     }
 }
 

@@ -33,10 +33,10 @@ name = "lean-ctx-engine"
 version = "3.12.2"
 edition = "2024"
 autobins = false
-description = "LeanCTX | OSS library: the open-source runtime for the Context Gateway for AI agents behind the lean-ctx CLI, MCP server and proxy integrations."
+description = "LeanCTX | Air-gapped OSS library (destinationworks fork): zero-network runtime for local context compression hooks."
 license = "Apache-2.0"
-repository = "https://github.com/yvgude/lean-ctx"
-homepage = "https://leanctx.com"
+repository = "https://github.com/destinationworks/lean-ctx"
+homepage = "https://github.com/destinationworks/lean-ctx"
 readme = "README.md"
 keywords = ["context-gateway", "mcp", "llm", "ai-agents", "context"]
 categories = ["development-tools"]
@@ -76,24 +76,6 @@ enterprise = []
 test-support = ["lean-ctx-fs/test-support"]
 default = [
   "tree-sitter",
-  "embeddings",
-  "http-server",
-  # Cross-shape routing Anthropic→OpenAI (enterprise#16): org model aliases
-  # (`acme/fast` → Foundry/vLLM/Ollama) must work from Claude-shaped clients
-  # with the shipped binary, so the pilot path needs no custom build
-  # (enterprise#63; Local-Free Invariant — compile-gated only, no license gate).
-  "shape-xlat",
-  "secure-update",
-  "jemalloc",
-  # Remote dense backends ship in release binaries so LEANCTX_QDRANT_URL /
-  # LEANCTX_PGVECTOR_URL work out of the box (both are env-gated at runtime).
-  "qdrant",
-  "pgvector",
-  # Extensions must load from the shipped binary or the channel does not exist:
-  # an author who packages a WASM addon cannot ask every user for a custom
-  # build. Measured cost of enabling it on aarch64-apple-darwin, release
-  # profile: 83_065_536 -> 83_815_584 bytes, +750 KB (+0.90%).
-  "wasm",
 ]
 jemalloc = ["dep:tikv-jemallocator", "dep:tikv-jemalloc-ctl"]
 dev-tools = []

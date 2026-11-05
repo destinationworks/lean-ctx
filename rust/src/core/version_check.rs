@@ -48,17 +48,8 @@ fn is_cache_stale(cache: &VersionCache) -> bool {
 }
 
 fn fetch_latest_version() -> Result<String, String> {
-    // Same client as `lean-ctx update`: token-aware and rate-limit aware (#2037).
-    let release = crate::core::updater::github_api_json(GITHUB_API_RELEASES)?;
-    let tag = release["tag_name"]
-        .as_str()
-        .ok_or_else(|| "missing tag_name in GitHub releases response".to_string())?;
-
-    let version = tag.trim().trim_start_matches('v').to_string();
-    if version.is_empty() || !version.contains('.') {
-        return Err("invalid version format".to_string());
-    }
-    Ok(version)
+    let _ = GITHUB_API_RELEASES;
+    Err("Remote version checks are disabled in destinationworks air-gapped build".to_string())
 }
 
 /// SemVer precedence on `MAJOR.MINOR.PATCH[-prerelease]`: a prerelease sorts
@@ -87,37 +78,12 @@ pub fn is_newer(latest: &str, current: &str) -> bool {
 /// Non-blocking, fire-and-forget. Skips if cache is fresh (<24h).
 /// Respects `update_check_disabled` config and `LEAN_CTX_NO_UPDATE_CHECK` env var.
 pub fn check_background() {
-    let cfg = super::config::Config::load();
-    if cfg.update_check_disabled_effective() {
-        return;
-    }
-
-    let cache = read_cache();
-    if let Some(ref c) = cache
-        && !is_cache_stale(c)
-    {
-        return;
-    }
-
-    std::thread::spawn(|| {
-        if let Ok(latest) = fetch_latest_version() {
-            write_cache(&latest);
-        }
-    });
+    let _ = (fetch_latest_version, write_cache, is_cache_stale);
 }
 
-/// Returns a formatted yellow update banner if a newer version is available.
-/// Reads only the local cache file — zero network calls, zero delay.
+/// Returns `None` in the destinationworks air-gapped build.
 pub fn get_update_banner() -> Option<String> {
-    let cache = read_cache()?;
-    if is_newer(&cache.latest, CURRENT_VERSION) {
-        Some(format!(
-            "  \x1b[33m\x1b[1m\u{27F3} Update available: v{CURRENT_VERSION} \u{2192} v{}\x1b[0m  \x1b[2m\u{2014} run:\x1b[0m \x1b[1mlean-ctx update\x1b[0m",
-            cache.latest
-        ))
-    } else {
-        None
-    }
+    None
 }
 
 /// Returns version info as JSON for the dashboard /api/version endpoint.

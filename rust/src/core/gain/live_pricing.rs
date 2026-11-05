@@ -76,13 +76,9 @@ fn snapshot() -> &'static RwLock<Option<Arc<LivePriceTable>>> {
     SNAP.get_or_init(|| RwLock::new(None))
 }
 
-/// True unless the operator disabled live pricing.
+/// Permanently disabled in the destinationworks air-gapped build.
 fn enabled() -> bool {
-    let v = std::env::var("LEAN_CTX_LIVE_PRICING").unwrap_or_default();
-    !matches!(
-        v.trim().to_ascii_lowercase().as_str(),
-        "off" | "0" | "false" | "no"
-    )
+    false
 }
 
 /// Looks a model up in the current live snapshot. `None` when the snapshot
@@ -218,89 +214,21 @@ async fn fetch_catalog(
 /// Network / decode errors propagate; the caller decides whether they matter
 /// (the background task just logs and keeps the previous table — fail-open).
 pub async fn refresh_now(client: &reqwest::Client) -> anyhow::Result<usize> {
-    let (openrouter, litellm) = tokio::join!(
-        fetch_catalog(client, MODELS_URL, parse_openrouter_models),
-        fetch_catalog(client, LITELLM_URL, parse_litellm_models),
+    let _ = (
+        client,
+        MODELS_URL,
+        LITELLM_URL,
+        REFRESH_INTERVAL_SECS,
+        fetch_catalog,
+        store_cache_file,
+        parse_openrouter_models as fn(&serde_json::Value) -> HashMap<String, ModelCost>,
+        parse_litellm_models as fn(&serde_json::Value) -> HashMap<String, ModelCost>,
     );
-
-    let mut models = match &openrouter {
-        Ok(map) => map.clone(),
-        Err(e) => {
-            tracing::warn!("OpenRouter price catalog unavailable: {e:#}");
-            HashMap::new()
-        }
-    };
-    match &litellm {
-        // `or_insert`: OpenRouter keys keep priority, LiteLLM extends coverage.
-        Ok(map) => {
-            for (k, v) in map {
-                models.entry(k.clone()).or_insert(*v);
-            }
-        }
-        Err(e) => tracing::warn!("LiteLLM price catalog unavailable: {e:#}"),
-    }
-    anyhow::ensure!(
-        !models.is_empty(),
-        "no price catalog reachable (OpenRouter: {}, LiteLLM: {})",
-        openrouter
-            .as_ref()
-            .map_or_else(ToString::to_string, |m| format!("{} keys", m.len())),
-        litellm
-            .as_ref()
-            .map_or_else(ToString::to_string, |m| format!("{} keys", m.len())),
-    );
-
-    let table = LivePriceTable {
-        fetched_at: std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .map_or(0, |d| d.as_secs()),
-        models,
-    };
-    let len = table.len();
-    store_cache_file(&table);
-    install(table);
-    Ok(len)
+    anyhow::bail!("Live model pricing network refresh is disabled in destinationworks air-gapped build")
 }
 
-/// Loads the disk cache immediately, then keeps the table fresh in the
-/// background (first fetch runs at once when the cache is missing or older
-/// than the refresh interval). Never blocks or fails the caller; idempotent —
-/// a process embedding both proxy and gateway spawns exactly one refresher.
-pub fn spawn_background_refresh() {
-    static SPAWNED: OnceLock<()> = OnceLock::new();
-    if !enabled() {
-        return;
-    }
-    ensure_loaded();
-    if SPAWNED.set(()).is_err() {
-        return;
-    }
-    tokio::spawn(async {
-        let client = reqwest::Client::new();
-        loop {
-            let stale = {
-                let guard = snapshot()
-                    .read()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner);
-                guard.as_ref().is_none_or(|t| {
-                    let now = std::time::SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .map_or(0, |d| d.as_secs());
-                    now.saturating_sub(t.fetched_at) >= REFRESH_INTERVAL_SECS
-                })
-            };
-            if stale {
-                match refresh_now(&client).await {
-                    Ok(n) => tracing::info!("live model pricing refreshed ({n} lookup keys)"),
-                    Err(e) => tracing::warn!(
-                        "live model pricing refresh failed (keeping previous table): {e:#}"
-                    ),
-                }
-            }
-            tokio::time::sleep(std::time::Duration::from_secs(REFRESH_INTERVAL_SECS / 12)).await;
-        }
-    });
-}
+/// Disabled in the destinationworks air-gapped build (no network tasks spawned).
+pub fn spawn_background_refresh() {}
 
 /// Canonical lookup form: lowercase, `.`→`-`, whitespace→`-`. Applied to both
 /// index keys and queries so `claude-opus-4.5` and `claude-opus-4-5` unify.
@@ -699,15 +627,10 @@ pub mod tests {
             fetched_at: 1,
             models: parse_openrouter_models(&fixture()),
         });
-        let (_, cost) = lookup("deepseek/deepseek-v4-flash-20260423").expect("live hit");
-        assert!((cost.input_per_m - 0.07).abs() < 1e-9);
-
-        crate::test_env::set_var("LEAN_CTX_LIVE_PRICING", "off");
         assert!(
-            lookup("deepseek/deepseek-v4-flash").is_none(),
-            "kill switch"
+            lookup("deepseek/deepseek-v4-flash-20260423").is_none(),
+            "airgapped build permanently disables live pricing lookup"
         );
-        crate::test_env::remove_var("LEAN_CTX_LIVE_PRICING");
         clear_for_tests();
     }
 }
